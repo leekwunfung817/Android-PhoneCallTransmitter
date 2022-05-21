@@ -1,0 +1,151 @@
+说明:
+
+服务器的接收主题
+cpos/carpark/admin/receive
+
+服务器的发布主题
+cpos/carpark/admin/send
+
+用户接收服务器的消息(订阅自己的接收主题)
+cpos/carpark/username/device_id/receive
+
+所有MQTT消息原始信息为json格式
+发布时使用zlib压缩
+接收到二进制zlib数据后,解压成json
+
+客户端私钥密码client139xxx
+client.pem.p12
+
+MQTT服务器公钥
+broker.pem
+
+1，向SERVER请求登入：
+
+订阅自己的接收主题,用于接收SERVER返回的数据
+cpos/carpark/username/device_id/receive
+
+请求登入：
+	[
+		{
+		"username":"xxx",
+		"password":"psd",
+		"device_type":"6",
+		"device_id":"xxx",
+		"device_name":"android",
+		"auto_login":"0",
+		"password_type":"0",
+		"msg_type":"16"
+		}
+	]
+	
+服务器向登入用户的接收主题
+cpos/carpark/username/device_id/receive
+发布[{"result":"1"}]
+
+result=1表示登入成功，result=0表示失败
+
+2, 向SERVER请求查询自己的设备列表
+	[
+		{
+		"username":"xxx",
+		"device_type":"6",
+		"device_id":"xxx",
+		"msg_type":"17"
+		}
+	]
+	
+服务器向用户的接收主题
+cpos/carpark/username/device_id/receive
+返回 用户的所有设备json
+	[
+		{
+		"msg_type":"17",
+		"username":"xxx",
+		"car_park_id":"6",
+		"device_id":"xxx",
+		xxx
+		},
+		{
+		xxx
+		}
+	]
+
+
+3,用户订阅自己管理的所有设备的发送主题
+   用于接收票箱的呼叫
+cpos/carpark/car_park_id/device_id/send
+
+
+-----到此完成登录和设备列表下载---------------
+
+通话过程
+
+1，APP用UDP向服务器发送要CALL的票箱资料(服务器立即保存APP的ip和port)
+发送SOUND_SERVER_EXCHANGE结构数据,function=CPOS_TEL_FUN_CALL
+
+UDP数据格式
+DATA[0]HEAD : 'A'
+DATA[1] - data_type: 5
+DATA[2-3]: 整个数据的长度
+DATA - 要发送的数据
+DATA[n] : checksum(前面数据的checksum,不包括自己)
+
+#define CPOS_TEL_FUN_FREE 0	
+#define CPOS_TEL_FUN_CALL 1 
+#define CPOS_TEL_FUN_HANG_UP 2
+#define CPOS_TEL_FUN_ANSWER 3
+#define CPOS_TEL_FUN_DATA 4
+#define CPOS_TEL_FUN_BUSY 5
+#define CPOS_TEL_FUN_CONNECT 6
+#define CPOS_TEL_FUN_INCOMING 7
+
+#define CPOS_REC_BUF_SIZE  600
+
+typedef struct
+{
+	ULONG ip;
+	unsigned short port;
+	char str_car_park_id[21];
+	int device_id;
+	int device_type;
+}SOUND_INFO;
+typedef struct
+{
+	SOUND_INFO from;
+	SOUND_INFO to;
+	char data[CPOS_REC_BUF_SIZE];
+	DWORD function;
+	unsigned char checksum;
+}SOUND_SERVER_EXCHANGE;
+
+
+2. 服务器用MQTT向票箱发送APP的username和device_id
+	[
+		{
+		"msg_type":18,
+		"car_park_id":"app",
+		"device_id":"123456",
+		"device_type":"6,",
+		"call_carpark":"20",
+		"call_device":"51",
+		"udp_ip":"202.25.214.21",
+		"udp_port":"24587"
+		}
+	]
+   APP用自己的MQTT接收主题接收MQTT信息, 用zlib解出json
+   立即用UDP向SERVER返回CPOS_TEL_FUN_CONNECT消息
+   (相当于向SERVER汇报自己的IP和PORT)
+   
+3. APP响铃,等用户按接听
+用户接听后,用UDP向SERVER发送已接听数据 CPOS_TEL_FUN_ANSWER
+
+启动自己的录音线程,开始录音并用UDP发给SERVER
+CPOS_TEL_FUN_DATA
+
+
+4.
+用户挂断时,发送CPOS_TEL_FUN_HANG_UP指令
+如果通话时,网络中断超过5秒, 自动结束通话
+
+
+
