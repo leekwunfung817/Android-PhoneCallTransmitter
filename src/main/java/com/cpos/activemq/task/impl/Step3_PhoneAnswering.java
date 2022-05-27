@@ -1,7 +1,10 @@
 package com.cpos.activemq.task.impl;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
@@ -25,51 +28,155 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Step3_PhoneAnswering extends TaskBase {
 
+//	public static final LinkedBlockingQueue<SoundServerExchange> PHONE_ANSWER_DEVICE_QUEUE = new LinkedBlockingQueue<>();
+	public static final LinkedBlockingQueue<SoundServerExchange> DEVICE_CALL_PHONE_QUEUE = new LinkedBlockingQueue<>();
+	public static final HashMap<String, Thread> CALL_LISTENER_THREAD = new HashMap<String, Thread>();
+	
+
+
 	public Step3_PhoneAnswering() {
 		super(TaskType.JSON);
+//		answerCallToDevice(1);
 	}
 
-	public void waitForAnswer(ControlCenterSession session) {
-		new Thread() {
+	// When mobile push call button
+	public void mobileCallDevice(ControlCenterSession session, CallDevice callDevice) {
+
+		try {
+			SoundInfo to = new SoundInfo(callDevice);
+			SoundInfo from = new SoundInfo(session);
+
+			// Forward calling signal to phone
+			SoundServerExchange serverExchange = new SoundServerExchange(from, to, Constant.EMPTY_REC_BUF,
+					Constant.CPOS_TEL_FUN_CALL);
+
+			byte[] bytes = SoundBytes.structMobileToCarPark(serverExchange);
+
+			// Sending
+			UdpInternet.send(bytes);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	// call this method when Phone connect - Listen for device calling
+	public void waitForCall(ControlCenterSession session) {
+		Thread thread = new Thread() {
 			@Override
 			public void run() {
 				String receiveTopic = receiveTopic(session);
 
-				MqttInternet.MQTT.subscribe(receiveTopic, new Response() {
-					@Override
-					public void OnMessage(String msg) throws Exception {
-						if (msg.charAt(msg.length() - 1) == 0x00) {
-							msg = msg.substring(0, msg.length() - 1);
+				try {
+					MqttInternet.MQTT.subscribe(receiveTopic, new Response() {
+						@Override
+						public void OnMessage(String msg) throws Exception {
+							if (msg.charAt(msg.length() - 1) == 0x00) {
+								msg = msg.substring(0, msg.length() - 1);
+							}
+							msg = msg.replaceAll("\n", "").replaceAll("\r", "");
+
+							List<JSONObject> jsonObjects = jsonStringtoJsonObjList(msg);
+							JSONObject jsonObject = jsonObjects.get(0);
+
+							int msg_type = (Integer) jsonObject.get("msg_type");
+							if (msg_type == 18) { // Receive call
+								String udp_ip = (String) jsonObject.get("udp_ip");
+								short udp_port = Short.parseShort((String) jsonObject.get("udp_port"));
+								String car_park_id = (String) jsonObject.get("car_park_id");
+								int device_id = Integer.parseInt((String) jsonObject.get("device_id"));
+								int device_type = Integer.parseInt((String) jsonObject.get("device_type"));
+
+								SoundInfo to = new SoundInfo(udp_ip, udp_port, car_park_id, device_id, device_type);
+								SoundInfo from = new SoundInfo( //
+										udp_ip // Dummy
+								, udp_port // Dummy
+								, session.getUsername(), session.getDeviceId(), session.getDeviceType());
+
+								// Forward calling signal to phone
+								SoundServerExchange serverExchange = new SoundServerExchange(from, to,
+										Constant.EMPTY_REC_BUF, Constant.CPOS_TEL_FUN_ANSWER);
+
+								// Wait for answer
+								DEVICE_CALL_PHONE_QUEUE.add(serverExchange);
+
+							}
 						}
-						msg = msg.replaceAll("\n", "").replaceAll("\r", "");
-
-						List<JSONObject> jsonObjects = jsonStringtoJsonObjList(msg);
-						JSONObject jsonObject = jsonObjects.get(0);
-
-						int msg_type = (Integer) jsonObject.get("msg_type");
-						if (msg_type == 18) { // Receive call
-							String udp_ip = (String) jsonObject.get("udp_ip");
-							short udp_port = Short.parseShort((String) jsonObject.get("udp_port"));
-							String car_park_id = (String) jsonObject.get("car_park_id");
-							int device_id = Integer.parseInt((String) jsonObject.get("device_id"));
-							int device_type = Integer.parseInt((String) jsonObject.get("device_type"));
-
-							SoundInfo to = new SoundInfo(udp_ip, udp_port, car_park_id, device_id, device_type);
-							SoundInfo from = new SoundInfo( //
-									udp_ip // Dummy
-									, udp_port // Dummy
-							, session.getUsername(), session.getDeviceId(), session.getDeviceType());
-							SoundServerExchange serverExchange = new SoundServerExchange(from, to, null, Constant.CPOS_TEL_FUN_ANSWER);
-							SoundBytes.answerMobileToCarPark(null);
-
-						}
-					}
-				});
+					});
+				} catch (MqttPersistenceException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (MqttException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
-		}.run();
+		};
+		CALL_LISTENER_THREAD.put(session.toString(), thread);
+		thread.run();
 	}
-	
-	public 
+
+	// When mobile answer the call
+	public void mobileAnswerDevice(ControlCenterSession session, CallDevice callDevice) {
+
+		try {
+			SoundInfo to = new SoundInfo(callDevice);
+			SoundInfo from = new SoundInfo(session);
+
+			// Forward calling signal to phone
+			SoundServerExchange serverExchange = new SoundServerExchange(from, to, Constant.EMPTY_REC_BUF,
+					Constant.CPOS_TEL_FUN_ANSWER);
+
+			byte[] bytes = SoundBytes.structMobileToCarPark(serverExchange);
+
+			// Sending
+			UdpInternet.send(bytes);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	// start a thread for
+//	public void answerCallToDevice(int threadCount) {
+//		for (int i = 0; i < threadCount; i++) {
+//			new Thread() {
+//				@Override
+//				public void run() {
+//					while (true) {
+//						try {
+//							while (true) {
+//								SoundServerExchange serverExchange = PHONE_ANSWER_DEVICE_QUEUE.take();
+//
+//								// Answer
+//								byte[] bytes = SoundBytes.structMobileToCarPark(serverExchange);
+//
+//								// Sending
+//								UdpInternet.send(bytes);
+//							}
+//
+//						} catch (Exception e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
+//					}
+//				}
+//			}.start();
+//		}
+//	}
+
+	public void OnMobileDisconnect(ControlCenterSession session) {
+		String receiveTopic = receiveTopic(session);
+		try {
+			MqttInternet.MQTT.unsubscribe(receiveTopic);
+		} catch (MqttPersistenceException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (MqttException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 //	
 //	@Override

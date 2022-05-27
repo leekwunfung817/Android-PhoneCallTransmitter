@@ -204,7 +204,7 @@ public class TaskBase {
 		return responseTopic(session.getUsername(), session.getDeviceId());
 	}
 
-	protected static String responseTopic(String username, String device_id) {
+	protected static String responseTopic(String username, int device_id) {
 		return "cpos/carpark/" + username + "/" + device_id + "/receive";
 	}
 

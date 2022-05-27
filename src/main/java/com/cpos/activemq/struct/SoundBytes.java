@@ -4,23 +4,23 @@ import org.yaml.snakeyaml.constructor.Construct;
 
 public class SoundBytes {
 
-	public static byte[] callingMobileToCarPark(SoundServerExchange soundServerExchange) {
-		return structMobileToCarPark(soundServerExchange, new byte[600], Constant.CPOS_TEL_FUN_CALL);
-	}
-
-	public static byte[] answerMobileToCarPark(SoundServerExchange soundServerExchange) {
-		return structMobileToCarPark(soundServerExchange, new byte[600], Constant.CPOS_TEL_FUN_ANSWER);
-	}
+//	public static byte[] callingMobileToCarPark(SoundServerExchange soundServerExchange) {
+//		return structMobileToCarPark(soundServerExchange);
+//	}
+//
+//	public static byte[] answerMobileToCarPark(SoundServerExchange soundServerExchange) {
+//		return structMobileToCarPark(soundServerExchange);
+//	}
+//	
+//	public static byte[] soundMobileToCarPark(SoundServerExchange soundServerExchange) {
+//		return structMobileToCarPark(soundServerExchange, Constant.CPOS_TEL_FUN_DATA);
+//	}
+//
+//	public static byte[] hangUpMobileToCarPark(SoundServerExchange soundServerExchange) {
+//		return structMobileToCarPark(soundServerExchange, Constant.CPOS_TEL_FUN_HANG_UP);
+//	}
 	
-	public static byte[] soundMobileToCarPark(SoundServerExchange soundServerExchange, byte[] sound_data) {
-		return structMobileToCarPark(soundServerExchange, sound_data, Constant.CPOS_TEL_FUN_DATA);
-	}
-
-	public static byte[] hangUpMobileToCarPark(SoundServerExchange soundServerExchange) {
-		return structMobileToCarPark(soundServerExchange, new byte[600], Constant.CPOS_TEL_FUN_HANG_UP);
-	}
-	
-	public static byte[] structMobileToCarPark(SoundServerExchange soundServerExchange, byte[] sound_data, int cmd_function) {
+	public static byte[] structMobileToCarPark(SoundServerExchange soundServerExchange) {
 		SoundInfo from = soundServerExchange.getFrom();
 		String[] ipSlicef = from.getIp().split(".");
 		int from_ip = 0;
@@ -149,6 +149,7 @@ public class SoundBytes {
 				{
 					/////////////////////////////////////////////////
 					// data
+					byte[] sound_data = soundServerExchange.data;
 					for (i = 0; i < sound_data.length; i++) {
 						send_buf[len + i] = sound_data[i]; //
 						len++;
@@ -156,6 +157,7 @@ public class SoundBytes {
 				}
 				{
 					// function
+					int cmd_function = soundServerExchange.function;
 					send_buf[len++] = (byte) (cmd_function & 0x000000ff);
 					send_buf[len++] = (byte) ((cmd_function >> 8) & 0x000000ff);
 					send_buf[len++] = (byte) ((cmd_function >> 16) & 0x000000ff);

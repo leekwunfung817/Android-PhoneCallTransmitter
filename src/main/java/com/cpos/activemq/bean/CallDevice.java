@@ -6,6 +6,9 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class CallDevice {
-	public static int msgType = 18;
-	final String cardParkId, deviceId, deviceType, callCarPark, callDevice, udpId, udpPort;
+	final int msgType;
+	final String cardParkId;
+	final int deviceId, deviceType, callCarPark, callDevice;
+	final String ip;
+	final short port;
 }

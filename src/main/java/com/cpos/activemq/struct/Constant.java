@@ -12,4 +12,6 @@ public class Constant {
 
 	public static final int CPOS_REC_BUF_SIZE = 600;
 	public static final int TIMEOUT = 1000;
+	
+	public static final byte[] EMPTY_REC_BUF = new byte[Constant.CPOS_REC_BUF_SIZE];
 }

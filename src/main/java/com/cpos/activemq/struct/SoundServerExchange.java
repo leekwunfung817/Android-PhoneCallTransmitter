@@ -8,6 +8,6 @@ import lombok.Data;
 public class SoundServerExchange {
 	SoundInfo from;
 	SoundInfo to;
-	byte[] data = new byte[Constant.CPOS_REC_BUF_SIZE];
+	byte[] data;
 	int function;
 }
