@@ -55,7 +55,8 @@ public class DeviceWebsocketClientsController {
 				int delay = rand.nextInt(MAX_TICK_INTERVAL - LEAST_TICK_INTERVAL);
 				Thread.sleep(delay);
 
-				broadcast(LEAST_TICK_INTERVAL + delay + "ms");
+				
+				broadcast(LEAST_TICK_INTERVAL + delay + "ms:keepAlive");
 
 			} catch (Exception e) {
 				log.info(e.getMessage());

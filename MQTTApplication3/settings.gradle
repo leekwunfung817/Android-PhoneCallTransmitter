@@ -1,0 +1,2 @@
+rootProject.name = "MQTTApplication3"
+include ':app'
