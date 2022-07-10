@@ -64,7 +64,7 @@ public class SoundBytes {
 
 //		int cmd_function = Constant.CPOS_TEL_FUN_CALL; // 呼叫
 
-		int cmd_len = 685;// 整体数据的长度:
+		int cmd_len = Constant.UDP_IO_BYTE_ARRAY_LEN;// 整体数据的长度:
 
 		int i = 0;
 		int len = 0;

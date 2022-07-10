@@ -1,4 +1,4 @@
-package com.cpos.activemq.mqtt;
+package com.cpos.net;
 //package com.cpos.activemq.activemq.activemq;
 //
 //import java.util.UUID;

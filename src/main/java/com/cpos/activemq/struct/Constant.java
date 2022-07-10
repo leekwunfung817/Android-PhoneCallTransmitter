@@ -11,6 +11,9 @@ public class Constant {
 	public static final int CPOS_TEL_FUN_INCOMING = 7;
 
 	public static final int CPOS_REC_BUF_SIZE = 600;
+
+	public static final int UDP_IO_BYTE_ARRAY_LEN = 685;// 整体数据的长度:
+	
 	public static final int TIMEOUT = 1000;
 	
 	public static final byte[] EMPTY_REC_BUF = new byte[Constant.CPOS_REC_BUF_SIZE];

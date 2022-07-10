@@ -1,6 +1,7 @@
-package com.cpos.activemq.mqtt;
+package com.cpos.activemq.media;
 
 public class Response {
+	
 	public void OnPayLoad(byte[] bytes) throws Exception {
 		OnMessage(new String(bytes));
 	}

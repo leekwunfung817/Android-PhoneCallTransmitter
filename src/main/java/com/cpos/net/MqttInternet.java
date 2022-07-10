@@ -1,4 +1,4 @@
-package com.cpos.activemq.mqtt;
+package com.cpos.net;
 
 import java.util.Properties;
 import java.util.UUID;
@@ -23,7 +23,8 @@ import org.springframework.stereotype.Component;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import com.cpos.activemq.mqtt.Password;
+import com.cpos.activemq.media.Response;
+import com.cpos.net.Password;
 
 @Slf4j
 public class MqttInternet extends Password {

@@ -3,6 +3,7 @@ package com.cpos.activemq.task;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -17,12 +18,12 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.cpos.activemq.mqtt.MqttInternet;
-import com.cpos.activemq.mqtt.Response;
+import com.cpos.activemq.media.Response;
 import com.cpos.activemq.session.ControlCenterSession;
 import com.cpos.activemq.struct.Constant;
 import com.cpos.activemq.struct.StaticFormat;
 import com.cpos.activemq.util.ZLIB;
+import com.cpos.net.MqttInternet;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,8 +56,16 @@ public class TaskBase {
 		
 	}
 
-	public void request(final ControlCenterSession session) throws Exception {
-		request(session, null);
+	public String request(final ControlCenterSession session) throws Exception {
+		ArrayBlockingQueue<String> abq = new ArrayBlockingQueue<>(1);
+		log.info("Waiting for response.");
+		request(session, new Response() {
+			@Override
+			public void OnMessage(String msg) throws Exception {
+				abq.add(msg);
+			}
+		});
+		return abq.take();
 	}
 
 	public void request(final ControlCenterSession session, Response callback) throws Exception {
@@ -183,6 +192,7 @@ public class TaskBase {
 	}
 
 	public List<JSONObject> jsonStringtoJsonObjList(String json) throws ParseException {
+		json=freeEndByte(json);
 		Object ob = new JSONParser().parse(json);
 		JSONArray js = (JSONArray) ob;
 		return jsonArrayToJsonObjectlist(js);
@@ -217,6 +227,15 @@ public class TaskBase {
 			}
 		} while (cSession.requestingTaskBase != null);
 
+	}
+	
+	public static String freeEndByte(String msg) {
+
+		if (msg.charAt(msg.length()-1) == 0x00) {
+			msg = msg.substring(0, msg.length()-1);
+		}
+		msg = msg.replaceAll("\n", "").replaceAll("\r", "");
+		return msg;
 	}
 
 }

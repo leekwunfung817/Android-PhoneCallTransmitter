@@ -6,9 +6,9 @@ import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.cpos.activemq.mqtt.MqttInternet;
 import com.cpos.activemq.session.ControlCenterSession;
 import com.cpos.activemq.task.TaskBase;
+import com.cpos.net.MqttInternet;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,5 +52,17 @@ public class Step2_RequestDeviceList extends TaskBase {
 		String deviceStr = String.join("\n", devices);
 		log.info("Devices: {}", deviceStr);
 		
+	}
+	
+	public String requestDeviceList(ControlCenterSession session) throws Exception {
+		List<JSONObject> list = jsonStringtoJsonObjList(request(session));
+		StringBuilder stringBuilder = new StringBuilder();
+		for (int i = 0; i < list.size(); i++) {
+			stringBuilder.append((stringBuilder.length()==0?"":";"));
+			
+			JSONObject o = list.get(i);
+			o.keySet().stream().forEach(key -> stringBuilder.append(o.get(key)+(stringBuilder.length()==0?"":",") ));
+		}
+		return stringBuilder.toString();
 	}
 }

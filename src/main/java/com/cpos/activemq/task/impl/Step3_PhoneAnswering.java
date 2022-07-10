@@ -12,9 +12,7 @@ import org.json.simple.JSONObject;
 import org.springframework.stereotype.Component;
 
 import com.cpos.activemq.bean.CallDevice;
-import com.cpos.activemq.mqtt.MqttInternet;
-import com.cpos.activemq.mqtt.Response;
-import com.cpos.activemq.mqtt.UdpInternet;
+import com.cpos.activemq.media.Response;
 import com.cpos.activemq.session.ControlCenterSession;
 import com.cpos.activemq.struct.Constant;
 import com.cpos.activemq.struct.SoundBytes;
@@ -22,6 +20,8 @@ import com.cpos.activemq.struct.SoundInfo;
 import com.cpos.activemq.struct.SoundServerExchange;
 import com.cpos.activemq.task.TaskBase;
 import com.cpos.activemq.util.ZLIB;
+import com.cpos.net.MqttInternet;
+import com.cpos.net.UdpInternet;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -126,6 +126,27 @@ public class Step3_PhoneAnswering extends TaskBase {
 			// Forward calling signal to phone
 			SoundServerExchange serverExchange = new SoundServerExchange(from, to, Constant.EMPTY_REC_BUF,
 					Constant.CPOS_TEL_FUN_ANSWER);
+
+			byte[] bytes = SoundBytes.structMobileToCarPark(serverExchange);
+
+			// Sending
+			UdpInternet.send(bytes);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	// When mobile sending sound to device
+	public void mobileTransferSoundToDevice(ControlCenterSession session, CallDevice callDevice, byte[] sound) {
+
+		try {
+			SoundInfo to = new SoundInfo(callDevice);
+			SoundInfo from = new SoundInfo(session);
+
+			// Forward calling signal to phone
+			SoundServerExchange serverExchange = new SoundServerExchange(from, to, sound,
+					Constant.CPOS_TEL_FUN_DATA);
 
 			byte[] bytes = SoundBytes.structMobileToCarPark(serverExchange);
 

@@ -4,26 +4,28 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cpos.activemq.bean.CallDevice;
-import com.cpos.activemq.mqtt.MqttInternet;
 import com.cpos.activemq.task.TaskBase;
+import com.cpos.net.MqttInternet;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public class ControlCenterSession {
 
-	static HashMap<String, ControlCenterSession> map = new HashMap<>();
+	static HashMap<String, ControlCenterSession> CONTROL_CENTER_SESSION_MAP = new HashMap<>();
 
 	final String username, password;
 	final int deviceId;
 	final String deviceName;
-	final int deviceType=6;
+	final int deviceType = 6;
 //	public AtomicBoolean isRequesting = new AtomicBoolean(false);
 	public CallDevice callingDevice = null;
 	public TaskBase requestingTaskBase = null;
-
-	private ControlCenterSession(String username, String password, int deviceId, String deviceName) {
+	
+	public ControlCenterSession(String username, String password, int deviceId, String deviceName) {
 		super();
 		this.username = username;
 		this.password = password;
@@ -37,11 +39,19 @@ public class ControlCenterSession {
 	}
 
 	public static ControlCenterSession get(String deviceId) {
-		return map.get(deviceId);
+		return CONTROL_CENTER_SESSION_MAP.get(deviceId);
 	}
 
 	public static ControlCenterSession distroy(String deviceId) {
-		return map.remove(deviceId);
+		return CONTROL_CENTER_SESSION_MAP.remove(deviceId);
+	}
+
+	public void startCall(CallDevice callingDevice) {
+		this.callingDevice = callingDevice;
+	}
+
+	public void endCall() {
+		this.callingDevice = null;
 	}
 
 }

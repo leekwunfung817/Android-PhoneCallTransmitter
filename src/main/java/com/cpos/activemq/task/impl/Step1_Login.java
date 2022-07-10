@@ -4,9 +4,9 @@ import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.cpos.activemq.mqtt.MqttInternet;
 import com.cpos.activemq.session.ControlCenterSession;
 import com.cpos.activemq.task.TaskBase;
+import com.cpos.net.MqttInternet;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,6 +18,13 @@ public class Step1_Login extends TaskBase {
 		super(TaskType.JSON);
 	}
 
+	public String requestResultCode(ControlCenterSession session) throws Exception {
+		 String json = request(session);
+		 log.info("Response analysis: "+json);
+		JSONObject item = jsonStringtoJsonObjList(json).get(0);
+        return (String) item.get("result");
+	}
+	
 	@Override
 	protected String requestJson(ControlCenterSession session) {
 		return "[{"
@@ -36,11 +43,7 @@ public class Step1_Login extends TaskBase {
 	protected void responseJson(ControlCenterSession session, String msg) throws Exception {
 		log.info("Step1_Login response:{}", msg);
 		try {
-			if (msg.charAt(msg.length()-1) == 0x00) {
-				msg = msg.substring(0, msg.length()-1);
-			}
-			msg = msg.replaceAll("\n", "").replaceAll("\r", "");
-			
+			msg = freeEndByte(msg);
 			JSONObject item = jsonStringtoJsonObjList(msg).get(0);
 	        if ( item.get("result").equals("1") && item.get("msg_type").equals("16") ) {
 	        	log.info("Login success");
