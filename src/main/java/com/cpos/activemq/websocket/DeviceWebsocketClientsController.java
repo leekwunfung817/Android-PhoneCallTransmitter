@@ -17,11 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class DeviceWebsocketClientsController {
 
-	@Value("${tick.interval.max:5000}")
+	@Value("${tick.interval.max:3600000}")
 	private Integer MAX_TICK_INTERVAL;
 
-	@Value("${tick.interval.least:1000}")
+	@Value("${tick.interval.least:3600000}")
 	private Integer LEAST_TICK_INTERVAL;
+	
+	private String keepAliveString = "...KeepAlive...";
 
 	private final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
@@ -54,10 +56,7 @@ public class DeviceWebsocketClientsController {
 			try {
 				int delay = rand.nextInt(MAX_TICK_INTERVAL - LEAST_TICK_INTERVAL);
 				Thread.sleep(delay);
-
-				
-				broadcast(LEAST_TICK_INTERVAL + delay + "ms:keepAlive");
-
+				broadcast(LEAST_TICK_INTERVAL + delay + "ms"+keepAliveString);
 			} catch (Exception e) {
 				log.info(e.getMessage());
 			}

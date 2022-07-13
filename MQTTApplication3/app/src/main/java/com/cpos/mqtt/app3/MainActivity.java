@@ -35,14 +35,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 
 import tech.gusavila92.websocketclient.WebSocketClient;
 
 public class MainActivity extends AppCompatActivity {
 
+    private String keepAliveString = "...KeepAlive...";
+
     private final String TAG = this.getClass().getCanonicalName();
 
-    private WebSocketClient webSocketClient;
+    private WebSocketClient webSocketClient = null;
     public MainActivity() {}
 
     @Override
@@ -80,22 +83,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setDeviceList(String txt) {
+        MainActivity mainActivity_this = this;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
 
-        System.out.println(txt);
-        String[] deviceStrList = txt.split(";");
-        ArrayList deviceArr = new ArrayList<String>();
-        for (String deviceStr: deviceStrList) {
-            deviceArr.add(deviceStr);
-        }
-        ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(
-            this
-            ,android.R.layout.simple_list_item_1
-            ,deviceArr
-        );
+                System.out.println(txt);
+                String[] deviceStrList = txt.split(";");
+                ArrayList deviceArr = new ArrayList<String>();
+                for (String deviceStr: deviceStrList) {
+                    deviceArr.add(deviceStr);
+                }
+                ArrayAdapter<String> deviceListAdapter = new ArrayAdapter<String>(
+                        mainActivity_this
+                        ,android.R.layout.simple_list_item_1
+                        ,deviceArr
+                );
 
-        ListView deviceList = (ListView)findViewById(R.id.deviceListView);
-        deviceList.setAdapter(listAdapter);
+                ListView deviceList = (ListView)findViewById(R.id.deviceListView);
+                deviceList.setAdapter(deviceListAdapter);
 
+            }
+        });
 //        ArrayList<View> views = new ArrayList<>();
 //        LinearLayout linearLayout = (LinearLayout)findViewById(R.id.vertical_base);
 //
@@ -145,11 +154,40 @@ public class MainActivity extends AppCompatActivity {
             public void onOpen() {
                 Log.i("WebSocket", "Session is starting");
                 webSocketClient.send("Login;cpostest;test;3;android");
+                webSocketClient.send("DeviceList;cpostest;test;3;android");
             }
 
             @Override
             public void onTextReceived(String s) {
-                Log.i("WebSocket", "Message received:["+s+"]");
+                if (!s.contains(keepAliveString)) {
+                    Log.i("WebSocket", "Message received:["+s+"].");
+                    String[] eles = s.split(";");
+                    if (eles[0].equals("DeviceList")) {
+                        StringBuilder stringBuilder = new StringBuilder();
+                        for (int i=1;i<eles.length;i++) {
+                            if (i>1) {
+                                stringBuilder.append(";");
+                            }
+                            HashMap<String, String> map = new HashMap<String, String>();
+                            String[] keyVals = eles[i].split(",");
+                            for (String keyVal: keyVals) {
+                                String[] keyValo = keyVal.split(":");
+                                if (keyValo.length == 2) {
+                                    String key = keyValo[0];
+                                    String val = keyValo[1];
+                                    map.put(key, val);
+                                }
+                            }
+                            Device device = new Device(map);
+                            stringBuilder.append(device.display());
+                        }
+                        Log.i("Report","Update device list "+stringBuilder.toString());
+                        setDeviceList(stringBuilder.toString());
+                    }
+                } else {
+                    Log.i("Websocket","Keep alive received.");
+                    webSocketClient.send("DeviceList;cpostest;test;3;android");
+                }
 //                final String message = s;
 //                runOnUiThread(new Runnable() {
 //                    @Override
@@ -194,5 +232,13 @@ public class MainActivity extends AppCompatActivity {
         webSocketClient.connect();
 
         Log.i("System","createWebSocketClient end ===============================");
+    }
+
+    public void updateDeviceList() {
+        webSocketClient.send("DeviceList;cpostest;test;3;android");
+    }
+
+    public void updateDeviceListResponse() {
+
     }
 }

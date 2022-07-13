@@ -61,8 +61,11 @@ public class Step2_RequestDeviceList extends TaskBase {
 			stringBuilder.append((stringBuilder.length()==0?"":";"));
 			
 			JSONObject o = list.get(i);
-			o.keySet().stream().forEach(key -> stringBuilder.append(o.get(key)+(stringBuilder.length()==0?"":",") ));
+			o.keySet().stream().forEach(key -> stringBuilder.append(
+					(stringBuilder.length()==0?"":",")+key+":"+((String)o.get(key)).replace(":", "-").replace(",", "-")
+					
+					));
 		}
-		return stringBuilder.toString();
+		return "DeviceList;"+stringBuilder.toString();
 	}
 }
