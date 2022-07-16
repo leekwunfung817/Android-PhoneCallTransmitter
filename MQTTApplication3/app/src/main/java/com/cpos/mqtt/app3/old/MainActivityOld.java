@@ -143,13 +143,13 @@ public class MainActivityOld extends AppCompatActivity {
     }
 
     public void updateMQTTStatus(String statusDescription) {
-        TextView appStatus = (TextView) findViewById(R.id.mqtt_description);
+        TextView appStatus = (TextView) findViewById(R.id.server_connection_status);
         appStatus.setText(statusDescription);
     }
 
     public void updateActionStatus(String statusDescription) {
-        TextView appStatus = (TextView) findViewById(R.id.action_description);
-        appStatus.setText(statusDescription);
+//        TextView appStatus = (TextView) findViewById(R.id.action_description);
+//        appStatus.setText(statusDescription);
     }
     public void inputVoiceReport(String statusDescription) {
         TextView appStatus = (TextView) findViewById(R.id.inputSoundVolumn);

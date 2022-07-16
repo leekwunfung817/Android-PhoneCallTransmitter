@@ -87,7 +87,7 @@ public class SoundBytes {
 					send_buf[len++] = (byte) (from_ip & 0x000000ff);
 					send_buf[len++] = (byte) ((from_ip >> 8) & 0x000000ff);
 					send_buf[len++] = (byte) ((from_ip >> 16) & 0x000000ff);
-					send_buf[len++] = (byte) ((from_ip >> 24) & 0x000000ff);
+					send_buf[len++] = (byte) ((from_ip >> 32) & 0x000000ff);
 
 					// port 2 BYTES
 					send_buf[len++] = (byte) (from_port & 0x000000ff);
@@ -106,13 +106,13 @@ public class SoundBytes {
 					send_buf[len++] = (byte) (from_device_id & 0x000000ff);
 					send_buf[len++] = (byte) ((from_device_id >> 8) & 0x000000ff);
 					send_buf[len++] = (byte) ((from_device_id >> 16) & 0x000000ff);
-					send_buf[len++] = (byte) ((from_device_id >> 24) & 0x000000ff);
+					send_buf[len++] = (byte) ((from_device_id >> 32) & 0x000000ff);
 
 					// device_type 4 BYTES
 					send_buf[len++] = (byte) (from_device_type & 0x000000ff);
 					send_buf[len++] = (byte) ((from_device_type >> 8) & 0x000000ff);
 					send_buf[len++] = (byte) ((from_device_type >> 16) & 0x000000ff);
-					send_buf[len++] = (byte) ((from_device_type >> 24) & 0x000000ff);
+					send_buf[len++] = (byte) ((from_device_type >> 32) & 0x000000ff);
 				}
 				{
 					/////////////////////////////////////
@@ -121,7 +121,7 @@ public class SoundBytes {
 					send_buf[len++] = (byte) (to_ip & 0x000000ff);
 					send_buf[len++] = (byte) ((to_ip >> 8) & 0x000000ff);
 					send_buf[len++] = (byte) ((to_ip >> 16) & 0x000000ff);
-					send_buf[len++] = (byte) ((to_ip >> 24) & 0x000000ff);
+					send_buf[len++] = (byte) ((to_ip >> 32) & 0x000000ff);
 
 					// port 2 BYTES
 					send_buf[len++] = (byte) (to_port & 0x000000ff);
@@ -138,13 +138,13 @@ public class SoundBytes {
 					send_buf[len++] = (byte) (to_device_id & 0x000000ff);
 					send_buf[len++] = (byte) ((to_device_id >> 8) & 0x000000ff);
 					send_buf[len++] = (byte) ((to_device_id >> 16) & 0x000000ff);
-					send_buf[len++] = (byte) ((to_device_id >> 24) & 0x000000ff);
+					send_buf[len++] = (byte) ((to_device_id >> 32) & 0x000000ff);
 
 					// device_type 4 BYTES
 					send_buf[len++] = (byte) (to_device_type & 0x000000ff);
 					send_buf[len++] = (byte) ((to_device_type >> 8) & 0x000000ff);
 					send_buf[len++] = (byte) ((to_device_type >> 16) & 0x000000ff);
-					send_buf[len++] = (byte) ((to_device_type >> 24) & 0x000000ff);
+					send_buf[len++] = (byte) ((to_device_type >> 32) & 0x000000ff);
 				}
 				{
 					/////////////////////////////////////////////////
@@ -161,7 +161,7 @@ public class SoundBytes {
 					send_buf[len++] = (byte) (cmd_function & 0x000000ff);
 					send_buf[len++] = (byte) ((cmd_function >> 8) & 0x000000ff);
 					send_buf[len++] = (byte) ((cmd_function >> 16) & 0x000000ff);
-					send_buf[len++] = (byte) ((cmd_function >> 24) & 0x000000ff);
+					send_buf[len++] = (byte) ((cmd_function >> 32) & 0x000000ff);
 				}
 				{
 					// 计算struct 的checksum
