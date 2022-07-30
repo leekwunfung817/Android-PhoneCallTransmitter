@@ -2,19 +2,25 @@ package com.cpos.mqtt.app3;
 
 import androidx.annotation.ColorInt;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.view.menu.ListMenuItemView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ContentInfoCompat;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -39,6 +45,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
@@ -52,57 +60,130 @@ import tech.gusavila92.websocketclient.WebSocketClient;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static String DEVICE_INFORMATION = "Device information";
+    public static String CANNOT_DETECT_DEVICE = "Cannot detect any device.";
+    public static HashMap<String,String> DEVICE_DISPLAY_LIST = new HashMap<>();
+    public static ArrayList<String> deviceArr;
+
     private String keepAliveString = "...KeepAlive...";
 
     private final String TAG = this.getClass().getCanonicalName();
 
+    public static boolean voiceRecordStatus = false;
 
     private WebSocketClient webSocketClient = null;
-    public MainActivity() {}
+
+    public MainActivity() {
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.i("System","OnCreate begin ===============================");
+        Log.i("System", "OnCreate begin ===============================");
+        MainActivity _this = this;
 
+        {
+            EditText serverIpAddress = (EditText) findViewById(R.id.server_ip_address);
+            EditText usernameInput = (EditText) findViewById(R.id.username);
+            EditText passwordInput = (EditText) findViewById(R.id.password);
+            serverIpAddress.setText("ws://192.168.8.71:8081/cpos");
+            usernameInput.setText("cpostest");
+            passwordInput.setText("test");
+        }
+        createWebSocketClient();
 
-        Button refresh_button = (Button)findViewById(R.id.refresh_button);
-        refresh_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                createWebSocketClient();
-                clearDeviceList();
-                try {
-                    updateDeviceList();
-                } catch (Exception e) {
-                    e.printStackTrace();
+        {
+            Button refresh_button = (Button) findViewById(R.id.refresh_button);
+            refresh_button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    createWebSocketClient();
+                    clearDeviceList();
+                    try {
+                        updateDeviceList();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        });
-
-        EditText serverIpAddress = (EditText)findViewById(R.id.server_ip_address);
-        EditText usernameInput = (EditText)findViewById(R.id.username);
-        EditText passwordInput = (EditText)findViewById(R.id.password);
-        serverIpAddress.setText("ws://192.168.8.71:8081/cpos");
-        usernameInput.setText("cpostest");
-        passwordInput.setText("test");
+            });
+        }
 
 
         VoiceController voiceController = new VoiceController(this);
+        {
+            if (voiceController.isCallAllow()) {
+                Toast.makeText(this, "Call allowed", Toast.LENGTH_SHORT);
 
-        if (voiceController.isCallAllow()) {
-            Toast.makeText(this, "Call allowed", Toast.LENGTH_SHORT);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        Log.i("voice", "Sound capture thread started.");
+                        int sampleRate = 16000; // 44100 for music
+                        int channelConfig = AudioFormat.CHANNEL_CONFIGURATION_MONO;
+                        int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
+                        int minBufSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
+                        byte[] buffer = new byte[minBufSize];
+                        if (ActivityCompat.checkSelfPermission(_this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                            return;
+                        }
+                        AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate, channelConfig, audioFormat, minBufSize * 10);
+                        Log.d("VS", "Recorder initialized");
+                        while (true) {
+                            if (voiceRecordStatus) {
+                                Log.d("voice", "Start voice buffering.");
+                                recorder.startRecording();
+                                while (voiceRecordStatus) {
+                                    minBufSize = recorder.read(buffer, 0, buffer.length);
+                                    webSocketClient.send(buffer);
+                                }
+                                recorder.stop();
+                                Log.d("voice", "Stop voice buffering.");
+                            } else {
+                                Log.d("voice", "Waiting a call.");
+                            }
+                            try {
+                                Thread.sleep(3000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+//                voiceController.recordAndPlay();
+                    }
+                }.start();
+            } else {
+                Toast.makeText(this, "Call prohibited", Toast.LENGTH_SHORT);
+            }
         }
 
-        new Thread() {
-            @Override
-            public void run() {
-                voiceController.recordAndPlay();
+        {
+            if (voiceController.isCallAllow()) {
+                ListView deviceList = (ListView) findViewById(R.id.deviceListView);
+                deviceList.setClickable(false);
+                deviceList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        String displayString = deviceArr.get(position);
+                        if (displayString == null || displayString.equals(CANNOT_DETECT_DEVICE)) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(getApplicationContext(),"No device ready.",Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                            return;
+                        }
+                        Log.i("Activity","Jump Page: "+displayString);
+                        Intent intent = new Intent(MainActivity.this, CallScreenActivity.class);
+                        String deviceInfo = deviceDisplayToDeviceInfo(displayString);
+                        intent.putExtra(DEVICE_INFORMATION, deviceInfo);
+                        startActivity(intent);
+                    }
+                });
             }
-        }.start();
+        }
 
-        createWebSocketClient();
         Log.i("System","OnCreate end ===============================");
     }
 
@@ -118,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void clearDeviceList() {
-        setDeviceList("Cannot detect any device.");
+        setDeviceList(CANNOT_DETECT_DEVICE);
     }
     private void setDeviceList(String txt) {
         MainActivity mainActivity_this = this;
@@ -128,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
 
                 System.out.println(txt);
                 String[] deviceStrList = txt.split(";");
-                ArrayList deviceArr = new ArrayList<String>();
+                deviceArr = new ArrayList<String>();
                 for (String deviceStr: deviceStrList) {
                     deviceArr.add(deviceStr);
                 }
@@ -138,7 +219,8 @@ public class MainActivity extends AppCompatActivity {
                         ,deviceArr
                 );
 
-                ListView deviceList = (ListView)findViewById(R.id.deviceListView);
+                ListView deviceList = (ListView) findViewById(R.id.deviceListView);
+                deviceList.setClickable(true);
                 deviceList.setAdapter(deviceListAdapter);
 
             }
@@ -212,39 +294,23 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
+
+
             @Override
             public void onTextReceived(String s) {
                 if (!s.contains(keepAliveString)) {
                     Log.i("WebSocket", "Message received:["+s+"].");
-                    String[] eles = s.split(";");
-                    if (eles[0].equals("DeviceList")) {
-                        StringBuilder stringBuilder = new StringBuilder();
-                        for (int i=1;i<eles.length;i++) {
-                            if (i>1) {
-                                stringBuilder.append(";");
-                            }
-                            HashMap<String, String> map = new HashMap<String, String>();
-                            String[] keyVals = eles[i].split(",");
-                            for (String keyVal: keyVals) {
-                                String[] keyValo = keyVal.split(":");
-                                if (keyValo.length == 2) {
-                                    String key = keyValo[0];
-                                    String val = keyValo[1];
-                                    map.put(key, val);
-                                }
-                            }
-                            Device device = new Device(map);
-                            stringBuilder.append(device.display());
-                        }
-                        Log.i("Report","Update device list "+stringBuilder.toString());
-                        setDeviceList(stringBuilder.toString());
+                    if (s.startsWith("DeviceList;")) {
+                        String listString = infoTextToDisplayText_deviceList(s);
+                        Log.i("Report","Update device list "+listString);
+                        setDeviceList(listString);
                     } else {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(getApplicationContext(),"Server return ["+s+"]",Toast.LENGTH_SHORT).show();
-                            }
-                        });
+//                        runOnUiThread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                Toast.makeText(getApplicationContext(),"Server return ["+s+"]",Toast.LENGTH_SHORT).show();
+//                            }
+//                        });
                     }
                 } else {
                     Log.i("Websocket","Keep alive received.");
@@ -357,4 +423,41 @@ public class MainActivity extends AppCompatActivity {
     public void updateDeviceListResponse() {
 
     }
+
+    public static String infoTextToDisplayText_deviceList(String infoText) {
+        DEVICE_DISPLAY_LIST.clear();
+        String[] eles = infoText.split(";");
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i=1;i<eles.length;i++) {
+            if (i>1) {
+                stringBuilder.append(";");
+            }
+            String deviceInfoString = eles[i];
+            String displayString = deviceInfoToDeviceDisplay(deviceInfoString);
+            stringBuilder.append(displayString);
+            DEVICE_DISPLAY_LIST.put(displayString, deviceInfoString);
+        }
+        return stringBuilder.toString();
+    }
+
+    public static String deviceInfoToDeviceDisplay(String deviceInfoString) {
+        HashMap<String, String> map = new HashMap<String, String>();
+        String[] keyVals = deviceInfoString.split(",");
+        for (String keyVal: keyVals) {
+            String[] keyValo = keyVal.split(":");
+            if (keyValo.length == 2) {
+                String key = keyValo[0];
+                String val = keyValo[1];
+                map.put(key, val);
+            }
+        }
+        Device device = new Device(map);
+        String displayString = device.display();
+        return displayString;
+    }
+
+    public static String deviceDisplayToDeviceInfo(String deviceDisplayString) {
+        return DEVICE_DISPLAY_LIST.get(deviceDisplayString);
+    }
+
 }

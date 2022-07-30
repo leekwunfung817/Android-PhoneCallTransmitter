@@ -57,7 +57,7 @@ public class VoiceController {
 
     public VoiceController(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
-        initRecordAndTrack();
+//        initRecordAndTrack();
     }
 
     public boolean isAllow(String permissionName) {
@@ -82,7 +82,7 @@ public class VoiceController {
 
     }
 
-    private void initRecordAndTrack() {
+//    private void initRecordAndTrack() {
 //        mainActivity.setVolumeControlStream(AudioManager.MODE_IN_COMMUNICATION);
 //        int min = AudioRecord.getMinBufferSize(8000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
 //        if (ActivityCompat.checkSelfPermission(mainActivity.getApplicationContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -112,35 +112,35 @@ public class VoiceController {
 
         // https://stackoverflow.com/questions/51419542/detect-voice-by-audio-recorder-in-android-studio
         // Get the minimum buffer size required for the successful creation of an AudioRecord object.
-        int bufferSizeInBytes = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,
-                RECORDER_CHANNELS,
-                RECORDER_AUDIO_ENCODING
-        );
-        // Initialize Audio Recorder.
-        if (ActivityCompat.checkSelfPermission(mainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        AudioRecord audioRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                RECORDER_SAMPLERATE,
-                RECORDER_CHANNELS,
-                RECORDER_AUDIO_ENCODING,
-                bufferSizeInBytes
-        );
+//        int bufferSizeInBytes = AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE,
+//                RECORDER_CHANNELS,
+//                RECORDER_AUDIO_ENCODING
+//        );
+//        // Initialize Audio Recorder.
+//        if (ActivityCompat.checkSelfPermission(mainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+//            // TODO: Consider calling
+//            //    ActivityCompat#requestPermissions
+//            // here to request the missing permissions, and then overriding
+//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+//            //                                          int[] grantResults)
+//            // to handle the case where the user grants the permission. See the documentation
+//            // for ActivityCompat#requestPermissions for more details.
+//            return;
+//        }
+//        AudioRecord audioRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+//                RECORDER_SAMPLERATE,
+//                RECORDER_CHANNELS,
+//                RECORDER_AUDIO_ENCODING,
+//                bufferSizeInBytes
+//        );
         // Start Recording.
 //        txv.setText("Ing");
-        audioRecorder.startRecording();
-        byte[] audioBuffer      = new  byte[bufferSizeInBytes];
-        int numberOfReadBytes = audioRecorder.read( audioBuffer, 0, bufferSizeInBytes );
-        audioQueue.add(audioBuffer);
+//        audioRecorder.startRecording();
+//        byte[] audioBuffer      = new  byte[bufferSizeInBytes];
+//        int numberOfReadBytes = audioRecorder.read( audioBuffer, 0, bufferSizeInBytes );
+//        audioQueue.add(audioBuffer);
 //        isRecording = true;
-    }
+//    }
 
     public void recordAndPlay()
     {

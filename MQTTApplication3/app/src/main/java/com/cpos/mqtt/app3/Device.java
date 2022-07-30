@@ -35,7 +35,12 @@ public class Device {
     }
 
     public String display() {
-        return String.format("Car Park ID: %s - Device Type: %d, Device ID: %d",cardParkId, deviceType, deviceId);
+        return String.format("Company: %s \nDevice Name: %s \nCar Park ID: %s \nDevice Type: %d \nDevice ID: %d ",
+                username,
+                device_remark,
+                cardParkId,
+                deviceType,
+                deviceId);
     }
 
     public String toString() {
